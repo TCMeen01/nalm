@@ -151,33 +151,33 @@ def get_model_class(model_name):
     return mapping[model_name]
 
 def fit_model(modelName, model, op, X_train, Y_train, X_test, Y_test,
-              threshold, lr=None, epochs=50000, optimizer_algo='Adam', batch_size=128):
+              threshold, lr=None, epochs=50000, optimizer_algo='Adam'):
     '''Hàm fit chung cho tất cả model'''
     if modelName in ['NALU', 'iNALU', 'NAC', 'gNALU']:
         return model.fit(
             X_train, Y_train, X_test, Y_test,
             lr=lr if lr is not None else 1e-3, epochs=epochs, each_epoch=None,
-            optimizer_algo=optimizer_algo, threshold=threshold, batch_size=batch_size
+            optimizer_algo=optimizer_algo, threshold=threshold,
         )
     elif modelName == 'NAU':
         return model.fit(
             X_train, Y_train, X_test, Y_test,
             lr=lr if lr is not None else 1e-3, epochs=epochs, each_epoch=None,
-            optimizer_algo=optimizer_algo, threshold=threshold, batch_size=batch_size,
+            optimizer_algo=optimizer_algo, threshold=threshold,
             lambda_base=0.01, lambda_start=20000, lambda_end=35000
         )
     elif modelName == 'NMU':
         return model.fit(
             X_train, Y_train, X_test, Y_test,
             lr=lr if lr is not None else 1e-3, epochs=epochs, each_epoch=None,
-            optimizer_algo=optimizer_algo, threshold=threshold, batch_size=batch_size,
+            optimizer_algo=optimizer_algo, threshold=threshold,
             lambda_base=0.01, lambda_start=20000, lambda_end=35000
         )
     elif modelName in ['NPU', 'RealNPU']:
         return model.fit(
             X_train, Y_train, X_test, Y_test,
             lr=lr if lr is not None else 5e-3, epochs=epochs, each_epoch=None,
-            optimizer_algo=optimizer_algo, threshold=threshold, batch_size=batch_size,
+            optimizer_algo=optimizer_algo, threshold=threshold,
             beta_begin=1e-7 if op == 'mul' else 1e-9, beta_end=1e-5 if op == 'mul' else 1e-7,
             beta_growth=10, beta_step=10000
         )
@@ -185,7 +185,7 @@ def fit_model(modelName, model, op, X_train, Y_train, X_test, Y_test,
         return model.fit(
             X_train, Y_train, X_test, Y_test,
             lr=lr if lr is not None else 5e-3, epochs=epochs, each_epoch=None,
-            optimizer_algo=optimizer_algo, threshold=threshold, batch_size=batch_size
+            optimizer_algo=optimizer_algo, threshold=threshold,
         )
 
 def run_benchmark(args):
@@ -221,8 +221,8 @@ def run_benchmark(args):
 
             converged_at, success = fit_model(args.model, model, args.op,
                 X_train, y_train, X_test, y_test,
-                threshold=mse_threshold, batch_size=args.batch_size,
-                lr=args.lr, epochs=int(args.n_epochs), optimizer_algo=args.optimizer)
+                threshold=mse_threshold,lr=args.lr,
+                epochs=int(args.n_epochs), optimizer_algo=args.optimizer)
             
             print(f'DONE | Model: {args.model} | RangeID: {rid} | Seed: {seed} | Result: ({converged_at}, {success})')
             sparsity = sparsity_loss(model, device).item()
