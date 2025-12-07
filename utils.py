@@ -216,7 +216,7 @@ def run_benchmark(args):
             model = ModelClass(in_dim=2, out_dim=1, device=device)
 
             X_train, y_train, X_test, y_test = generate_data(
-                args.op, rid, n_train=10000, n_test=10000, seed=seed
+                args.op, rid, n_train=1000000, n_test=10000, seed=seed
             )
 
             converged_at, success = fit_model(args.model, model, args.op,
