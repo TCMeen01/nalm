@@ -139,9 +139,11 @@ def run_benchmark(args):
                         history['sparsity_loss'].append(model.sparsity_loss())
 
                         if verbose:
-                            print(f'Interation: {iter} | Train Loss: {total_loss} | ',
-                                  f'Validation Loss: {history['interpolation_loss'][-1]} | ',
-                                  f'Extrapolation Loss: {history['extrapolation_loss'][-1]}')
+                            print(
+                                f"Interation: {iter} | Train Loss: {total_loss} | "
+                                f"Validation Loss: {history['interpolation_loss'][-1]} | "
+                                f"Extrapolation Loss: {history['extrapolation_loss'][-1]}"
+                            )
                 
             # Post-process
             solved_at_iter, best_model, sparsity_error = extract_metrics(history, threshold_inter=mse_val.item(),
