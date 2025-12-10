@@ -153,6 +153,15 @@ def run_benchmark(args):
                                 f"Validation Loss: {history['interpolation_loss'][-1]} | "
                                 f"Extrapolation Loss: {history['extrapolation_loss'][-1]}"
                             )
+
+                        # Early stopping nếu 5000 iterations gần đây không thay đổi nhiều (interpolation)
+                        if len(history['interpolation_loss']) > 5000 // log_interval:
+                            recent_losses = history['interpolation_loss'][-(5000 // log_interval):]
+                            if max(recent_losses) - min(recent_losses) < 1e-10:
+                                if verbose is True:
+                                    print(f"Early stopping at iteration {iter} due to convergence.")
+                                break
+
                 
             # Post-process
             solved_at_iter, best_model, sparsity_error = extract_metrics(history, threshold_inter=mse_val.item(),
