@@ -1,2 +1,2 @@
 Model,Operation,Range,Success_Rate,Success_Rate_Plus,Success_Rate_Minus,Speed_Convergence_Mean,Speed_Convergence_Plus,Speed_Convergence_Minus,Sparsity_Error_Mean,Sparsity_Error_Plus,Sparsity_Error_Minus
-iNPU,mul,U8,100.0,0.0,97.5,7000.0,0.0,0.0,4.887581e-06,0.0,0.0
+iNPU,div,U5,100.0,0.0,97.5,4000.0,0.0,0.0,0.0,0.0,0.0
