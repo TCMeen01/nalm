@@ -1,2 +1,2 @@
 Model,Operation,Range,Success_Rate,Success_Rate_Plus,Success_Rate_Minus,Speed_Convergence_Mean,Speed_Convergence_Plus,Speed_Convergence_Minus,Sparsity_Error_Mean,Sparsity_Error_Plus,Sparsity_Error_Minus
-NAU,sub,U9,100.0,0.0,30.849710781876084,6200.0,941.8111302724299,941.8111302724299,0.0,0.0,0.0
+NMU,mul,U8,100.0,0.0,13.718517153071252,2920.0,165.11188493024156,165.11188493024156,2.3841858e-07,0.0,0.0

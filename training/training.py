@@ -159,6 +159,7 @@ def run_benchmark(args):
                                                                          threshold_extra=mse_test.item(),
                                                                          log_interval=log_interval)
             if solved_at_iter is not None:
+                print(solved_at_iter, best_model, sparsity_error)
                 solved_at_iters.append(solved_at_iter)
                 success += 1
                 sparsity_list.append(sparsity_error)

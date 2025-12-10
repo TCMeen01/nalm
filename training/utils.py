@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from scipy.stats import beta, t
+from scipy.stats import binomtest, bayes_mvs
 import math
 
 # =================================================
@@ -118,97 +118,78 @@ def extract_metrics(history, threshold_inter, threshold_extra, log_interval=1000
             break
     
     # Tìm best_model và sparsity_error
-    best_inter_loss = float('inf')
     min_step = max(0, len(history['interpolation_loss']) - (n_last_steps // log_interval))
-    for i in range(min_step, len(history['interpolation_loss'])):
-        inter_loss = history['interpolation_loss'][i]
-        if inter_loss.item() < best_inter_loss:
-            best_inter_loss = inter_loss.item()
-            best_model = i * log_interval
-            sparsity_error = history['sparsity_loss'][i].item()
+    best_model = np.argmin(history['interpolation_loss'][min_step:]) + min_step
+    sparsity_error = history['sparsity_loss'][best_model]
     
-    return first_solved_step, best_model, sparsity_error
+    return first_solved_step, (best_model + 1) * log_interval, sparsity_error
 
-# 1) SUCCESS RATE – Binomial (Clopper–Pearson, bất đối xứng)
-def ci_success_rate(success, n_seeds, alpha=0.05):
+# 1) SUCCESS RATE - Binom
+def ci_success_rate(success, n_seeds, confidence=0.95):
     """
-    success: số seed thành công
-    n_seeds: tổng số seed
-    return: (mean, plus, minus) theo tỷ lệ 100%
+    Tính CI cho Success Rate dùng phân phối nhị thức (95%)
+    Trả về: (mean, plus, minus)
     """
-    if n_seeds == 0:
-        return None, None, None
+    mean = success / n_seeds
+    low, high = binomtest(success, n_seeds).proportion_ci(confidence_level=confidence)
 
-    p_hat = success / n_seeds
-
-    if success == 0:
-        # [0, 1 - (alpha/2)^(1/n)]
-        lower = 0.0
-        upper = 1 - (alpha/2) ** (1.0 / n_seeds)
-    elif success == n_seeds:
-        # [(alpha/2)^(1/n), 1]
-        lower = (alpha/2) ** (1.0 / n_seeds)
-        upper = 1.0
-    else:
-        # Clopper–Pearson chung
-        lower = beta.ppf(alpha/2, success, n_seeds - success + 1)
-        upper = beta.ppf(1 - alpha/2, success + 1, n_seeds - success)
-
-    plus  = max(0.0, upper - p_hat)
-    minus = max(0.0, p_hat - lower)
-    return p_hat * 100, plus * 100, minus * 100
+    return mean * 100, (high - mean) * 100, (mean - low) * 100
 
 
-# 2) SPEED CONVERGENCE – dùng t-CI quanh mean
+# 2) SPEED CONVERGENCE - Gamma
 def ci_speed_convergence(solved_at_iters, alpha=0.05):
     """
-    solved_at_iters: list các iteration step mà seed giải được (bỏ NA trước khi gọi)
-    return: (mean, plus, minus)
+    Tính CI cho Speed Convergence (Mean) dùng scipy.stats.bayes_mvs.
+    Phương pháp này tự động tính Mean, Variance, Std cho mẫu nhỏ.
+    Trả về: (mean, plus, minus)
     """
-    vals = np.array(solved_at_iters, dtype=float)
-    vals = vals[~np.isnan(vals)]
+    vals = solved_at_iters
     n = len(vals)
+    
     if n == 0:
         return None, None, None
+    
+    if np.allclose(solved_at_iters, solved_at_iters[0], atol=1e-8):
+        return np.mean(solved_at_iters), 0.0, 0.0
+
     if n == 1:
         return vals[0], 0.0, 0.0
 
-    mean = float(np.mean(vals))
-    std  = float(np.std(vals, ddof=1))
-    t_crit = t.ppf(1 - alpha/2, df=n-1)
-    half = t_crit * std / math.sqrt(n)
-
-    plus  = half
-    minus = half
+    mean_cntr, (lower, upper) = bayes_mvs(vals, alpha=1-alpha)[0]
+    
+    mean  = mean_cntr
+    plus  = max(0.0, upper - mean)
+    minus = max(0.0, mean - lower)
+    
     return mean, plus, minus
 
 
-# 3) SPARSITY ERROR – t-CI trên mean, xử lý biên 0
+# 3) SPARSITY ERROR
 def ci_sparsity_error(sparsity_list, alpha=0.05):
     """
     sparsity_list: list sparsity_error mỗi seed (>=0)
     return: (mean, plus, minus)
     """
-    vals = np.array(sparsity_list, dtype=float)
-    vals = vals[~np.isnan(vals)]
-    n = len(vals)
+    """
+    Tính Mean và CI 95% cho Sparsity Error.
+    - Input: List các giá trị sparsity (float).
+    - Output: (mean, plus, minus).
+    """
+    n = len(sparsity_list)
+    
     if n == 0:
         return None, None, None
 
-    mean = float(np.mean(vals))
-
-    # Tất cả bằng 0 -> không có dao động
-    if np.allclose(vals, 0.0):
-        return mean, 0.0, 0.0
+    if np.allclose(sparsity_list, sparsity_list[0], atol=1e-8):
+        return np.mean(sparsity_list), 0.0, 0.0
 
     if n == 1:
-        return mean, 0.0, 0.0
+        return sparsity_list[0], 0.0, 0.0
 
-    std   = float(np.std(vals, ddof=1))
-    t_crit = t.ppf(1 - alpha/2, df=n-1)
-    half = t_crit * std / math.sqrt(n)
+    mean_cntr, (lower, upper) = bayes_mvs(sparsity_list, alpha=1-alpha)[0]
 
-    # Không cho lower < 0
-    minus = min(half, mean)
-    plus  = half
+    mean  = mean_cntr
+    plus  = max(0.0, upper - mean)
+    minus = max(0.0, mean - lower)
+    
     return mean, plus, minus
