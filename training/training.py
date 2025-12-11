@@ -26,6 +26,8 @@ PROJECT_DIR = os.path.dirname(ROOT_DIR)                # thư mục nalm/
 
 def get_model_class(model_name):
     '''Mapping tên model từ string sang class'''
+    # Việc của Bình: Hiện tại NPU và RealNPU chạy chưa ổn (chưa tìm hiểu vì sao, có thể
+    # là initialization, hoặc setup, kiểm tra và tìm hiểu, sửa đổi)
     model_name = model_name.upper()
     mapping = {
         'NALU': NALU,
@@ -133,9 +135,14 @@ def run_benchmark(args):
                 lambda_current = lambda_base * min(1.0, max(0.0, (iter - lambda_start) / (lambda_end - lambda_start)))
                 beta_current   = min(beta_start * (beta_growth ** (iter // beta_step)), beta_end)
                 
-                total_loss = (F.mse_loss(model(X), Y) + 
-                              lambda_current * model.regularization_loss() + 
-                              beta_current * model.regularization_loss())
+                if args.model.upper() != 'INALU':
+                    total_loss = (F.mse_loss(model(X), Y) + 
+                                lambda_current * model.regularization_loss() + 
+                                beta_current * model.regularization_loss())
+                elif args.model.upper() == 'INALU':
+                    # Việc của Bình. Lưu ý ở đoạn Reinit và Khi nào kích hoạt regularization
+                    pass
+
 
                 optimizer.zero_grad()
                 total_loss.backward()
