@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from models.nalu import NALU
 from models.inalu import iNALU
-from models.nac import NAC
+from models.nac import *
 from models.gnalu import GNALU
 from models.nau import NAU
 from models.nmu import NMU
@@ -30,13 +30,14 @@ def get_model_class(model_name):
     mapping = {
         'NALU': NALU,
         'INALU': iNALU,
-        'NAC': NAC,
+        'NAC_ADD': NAC_add,
+        'NAC_MUL': NAC_mul,
         'GNALU': GNALU,
-        'NAU': NAU,
-        'NMU': NMU,
+        'NAU': NAU,             #Done
+        'NMU': NMU,             #Done
         'NPU': NPU,
         'REALNPU': RealNPU,
-        'INPU': iNPU,
+        'INPU': iNPU,           #Done
     }
     if model_name not in mapping:
         raise ValueError(f"Model {model_name} chưa được định nghĩa trong mapping.")
@@ -153,7 +154,7 @@ def run_benchmark(args):
                                 f"Validation Loss: {history['interpolation_loss'][-1]} | "
                                 f"Extrapolation Loss: {history['extrapolation_loss'][-1]}"
                             )
-                            print(model.W)
+                            # print(model.W)
 
                         # Early stopping nếu 5000 iterations gần đây không thay đổi nhiều (interpolation)
                         if len(history['interpolation_loss']) > 5000 // log_interval:
